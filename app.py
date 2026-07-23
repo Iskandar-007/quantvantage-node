@@ -1,14 +1,14 @@
 """
 ============================================================
 S&P 500 Core Matrix - Portfolio Automation Dashboard
-Version 3.0.0 - Phase A - 23 July 2026
+Version 3.1.0 - Phase A - 23 July 2026
 Streamlit 1.35+ and Python 3.11+
 Premium institutional terminal with: lazy page navigation,
 restored Capital Recycling Engine (Execute Transfer), automated
-DCAX2 Surveillance Feed, editable portfolio + CSV import,
-per-stock Detail (fundamentals, analyst ratings, news),
-custom tickers, watchlist, industry/theme map, coloured
-keyword sentiment, and private user-held persistence.
+DCAX2 Surveillance Feed, editable portfolio + smart CSV import
+(via qvn_import), per-stock Detail (fundamentals, analyst
+ratings, news), custom tickers, watchlist, industry/theme map,
+coloured keyword sentiment, and private user-held persistence.
 All HTML is built from short string pieces so the source is
 robust to copy and paste line wrapping.
 ============================================================
@@ -27,7 +27,7 @@ from datetime import datetime
 # ============================================================
 
 # Display ticker -> Yahoo Finance lookup symbol.
-# SK Hynix trades on the Korea Exchange and needs .KS
+# SK Hynix trades on the Korea Exchange and needs the .KS suffix.
 TICKER_MAP = {
     "KO": "KO",
     "MSFT": "MSFT",
@@ -964,7 +964,7 @@ def recs_html(rec):
     return "".join(parts)
 
 # ============================================================
-# CSV PARSER
+# CSV HELPERS (legacy; the Settings page now uses qvn_import)
 # ============================================================
 
 def _find_col(cols, needles):
@@ -1108,7 +1108,7 @@ def main():
         + 'QuantVantage <span style="color:#34d399">Node</span></div>'
         + '<div style="font-family:ui-monospace,monospace;font-size:10px;'
         + 'letter-spacing:.18em;text-transform:uppercase;color:#64748b">'
-        + 'Operator Console v3.0</div></div></div>',
+        + 'Operator Console v3.1</div></div></div>',
         unsafe_allow_html=True,
     )
 
@@ -1707,7 +1707,7 @@ def main():
             st.rerun()
 
         st.markdown(DIVIDER, unsafe_allow_html=True)
-               import qvn_import
+        import qvn_import
         st.subheader("CSV Import (first setup or full re-sync)")
         st.caption("Supports an IBKR Activity Statement, a holdings snapshot, or (as an estimate) a transaction history. For daily tweaks, use the editable table above.")
         qvn_import.render_csv_import()
