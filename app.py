@@ -1,18 +1,19 @@
 """
 ============================================================
 S&P 500 Core Matrix - Portfolio Automation Dashboard
-Version:  2.2.1  |  Date: 23 July 2026
+Version:  2.3.0  |  Date: 23 July 2026  |  "Premium Skin"
 Framework: Streamlit 1.35+  |  Python 3.11+
-Tracks 38 designated assets (37 equities + SIVR) against a
-rolling 52-week high, flags DCAX2 deployment triggers and
-structured milestone take-profit levels, and enforces a
-maximum of 10 active single-stock positions.
+Live Yahoo Finance data rendered through an institutional
+dark theme: KPI tiles, allocation donut, milestone ladder,
+rich cockpit cards (DCAX2 flash + milestone trim + sparkline),
+and a premium sortable watchlist matrix.
 ============================================================
 """
 
 import streamlit as st
 import yfinance as yf
 import pandas as pd
+import math
 
 # ============================================================
 # CONFIGURATION & CONSTANTS
@@ -38,6 +39,11 @@ MAX_ACTIVE_STOCKS = 10
 MILESTONE_LEVELS = [1.5, 2.0, 2.5, 3.0]   # +50%, +100%, +150%, +200%
 DCAX2_THRESHOLD = -0.20                    # -20% from 52-week high
 
+# Dollar sign as an HTML entity, so Streamlit never mistakes
+# currency figures for LaTeX math (which would corrupt them).
+DS = "&#" + "36;"
+DIVIDER = '<div style="height:1px;background:#1e293b;margin:22px 0"></div>'
+
 # ============================================================
 # PAGE CONFIGURATION
 # ============================================================
@@ -48,6 +54,77 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# ============================================================
+# PREMIUM THEME (injected CSS - dark institutional surfaces)
+# ============================================================
+
+PREMIUM_CSS = '''
+<style>
+.stApp { background:#020617; }
+section[data-testid="stSidebar"] { background:#0b1220; }
+section[data-testid="stSidebar"] .stMarkdown,
+section[data-testid="stSidebar"] label { color:#cbd5e1; }
+.stApp h1, .stApp h2, .stApp h3 { color:#f8fafc; letter-spacing:-0.01em; }
+.stApp p, .stApp .stMarkdown { color:#cbd5e1; }
+[data-testid="stMetric"] { background:#0f172a; border:1px solid #1e293b; border-radius:14px; padding:12px 14px; }
+[data-testid="stMetric"] [data-testid="stMetricValue"] { font-family:ui-monospace,'SF Mono',Menlo,monospace; color:#f8fafc; }
+[data-testid="stMetric"] [data-testid="stMetricLabel"] { color:#94a3b8; }
+.stButton>button { background:#0f172a; color:#e2e8f0; border:1px solid #334155; border-radius:10px; }
+.stButton>button:hover { border-color:#10b981; color:#ffffff; }
+details { background:#0f172a; border:1px solid #1e293b; border-radius:12px; }
+.qvn-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:6px 0 8px}
+@media(max-width:900px){.qvn-kpi-grid{grid-template-columns:repeat(2,1fr)}}
+.qvn-kpi{background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:16px 18px;box-shadow:0 18px 48px -28px rgba(0,0,0,.7)}
+.qvn-kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#64748b}
+.qvn-kpi-val{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:24px;font-weight:700;color:#f8fafc;margin-top:6px}
+.qvn-kpi-val.pos{color:#34d399}.qvn-kpi-val.neg{color:#fb7185}.qvn-kpi-val.amb{color:#fbbf24}
+.qvn-kpi-sub{font-size:11px;color:#64748b;margin-top:4px;font-family:ui-monospace,monospace}
+.qvn-card{background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:16px;box-shadow:0 18px 48px -28px rgba(0,0,0,.7);min-height:340px;display:flex;flex-direction:column;gap:8px}
+.qvn-card-head{display:flex;align-items:center;justify-content:space-between}
+.qvn-ticker{font-family:ui-monospace,monospace;font-size:18px;font-weight:700;color:#ffffff}
+.qvn-chip{font-family:ui-monospace,monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;background:#1e293b;color:#94a3b8;padding:2px 7px;border-radius:6px}
+.qvn-price{font-family:ui-monospace,monospace;font-size:22px;font-weight:700;color:#ffffff}
+.qvn-sub{font-size:11px;color:#64748b}
+.qvn-pos{color:#34d399}.qvn-neg{color:#fb7185}
+.qvn-meter{height:6px;background:#1e293b;border-radius:99px;overflow:hidden}
+.qvn-meter-fill{height:100%;background:#475569;border-radius:99px;transition:width .5s}
+.qvn-meter-amber{background:#f59e0b}
+.qvn-row{display:flex;justify-content:space-between;font-size:12px;color:#94a3b8}
+.qvn-row b{font-family:ui-monospace,monospace;color:#e2e8f0}
+.qvn-banner-trim{margin-top:auto;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.4);border-radius:10px;padding:8px 10px;font-size:11px;font-weight:700;color:#6ee7b7;text-align:center}
+.qvn-badge-dcax2{margin-top:auto;background:#f59e0b;border-radius:10px;padding:10px;font-size:11px;font-weight:800;letter-spacing:.02em;color:#0b1220;text-align:center;animation:qvnflash 1.1s ease-in-out infinite}
+.qvn-nominal{margin-top:auto;background:#0b1220;border:1px solid #1e293b;border-radius:10px;padding:8px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#64748b;text-align:center}
+@keyframes qvnflash{0%,100%{opacity:1;box-shadow:0 0 22px -4px rgba(245,158,11,.8)}50%{opacity:.55;box-shadow:0 0 8px -4px rgba(245,158,11,.3)}}
+.qvn-balance{display:flex;flex-direction:column;gap:10px}
+.qvn-legend{display:flex;align-items:center;justify-content:space-between;border:1px solid;border-radius:12px;padding:12px 14px}
+.qvn-leg-name{font-size:13px;font-weight:600;color:#ffffff}
+.qvn-leg-desc{font-size:11px;color:#64748b}
+.qvn-leg-val{font-family:ui-monospace,monospace;font-size:13px;font-weight:700;color:#ffffff}
+.qvn-leg-pct{font-family:ui-monospace,monospace;font-size:11px}
+.qvn-bar{display:flex;height:10px;border-radius:99px;overflow:hidden;background:#1e293b}
+.qvn-ms-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.qvn-ms{background:#0b1220;border:1px solid #1e293b;border-radius:12px;padding:12px;text-align:center}
+.qvn-ms.lit{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.45);box-shadow:0 0 30px -10px rgba(16,185,129,.5)}
+.qvn-ms-l{font-family:ui-monospace,monospace;font-size:11px;font-weight:700;color:#64748b}
+.qvn-ms.lit .qvn-ms-l{color:#6ee7b7}
+.qvn-ms-v{font-family:ui-monospace,monospace;font-size:15px;font-weight:700;color:#cbd5e1;margin-top:2px}
+.qvn-ms.lit .qvn-ms-v{color:#ffffff}
+.qvn-ms-c{font-size:10px;color:#475569;margin-top:2px}
+.qvn-ms.lit .qvn-ms-c{color:#34d399}
+.qvn-table-wrap{max-height:520px;overflow:auto;border:1px solid #1e293b;border-radius:14px}
+table.qvn-table{width:100%;border-collapse:collapse;font-size:13px}
+table.qvn-table thead th{position:sticky;top:0;background:#0b1220;text-align:left;padding:12px 16px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#64748b;border-bottom:1px solid #1e293b}
+table.qvn-table td{padding:11px 16px;border-bottom:1px solid rgba(30,41,59,.6);color:#cbd5e1;font-family:ui-monospace,monospace}
+table.qvn-table tr.qvn-trig{background:rgba(245,158,11,.06)}
+.qvn-td-tk{color:#ffffff;font-weight:700}
+.qvn-sig-dcax{background:rgba(245,158,11,.18);color:#fcd34d;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700}
+.qvn-sig-base{background:#1e293b;color:#94a3b8;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700}
+</style>
+'''
+
+def inject_premium_theme():
+    st.markdown(PREMIUM_CSS, unsafe_allow_html=True)
 
 # ============================================================
 # CACHED DATA FETCH (1-year daily history for all symbols)
@@ -65,12 +142,9 @@ def fetch_market_data():
         threads=True,
         progress=False,
     )
-
     history, current_prices, high_52w = {}, {}, {}
-
     if data is None or data.empty:
         return history, pd.Series(dtype=float), pd.Series(dtype=float)
-
     for sym in symbols:
         try:
             df = data[sym].copy() if len(symbols) > 1 else data.copy()
@@ -83,237 +157,59 @@ def fetch_market_data():
             high_52w[sym] = float(df["High"].max())
         except (KeyError, TypeError):
             continue
-
     return history, pd.Series(current_prices), pd.Series(high_52w)
 
-
 def read_secret(key):
-    """Safely retrieve a credential from st.secrets without raising."""
     try:
         return st.secrets[key]
     except Exception:
         return None
 
 # ============================================================
-# POSITION CARD RENDERER
+# PREMIUM RENDER HELPERS (pure HTML/SVG - no extra libraries)
 # ============================================================
 
-def render_position_card(pos, idx, current_prices, high_52w, history):
-    display = pos["ticker"]
-    sym = TICKER_MAP[display]
-    cur = current_prices.get(sym)
-    high = high_52w.get(sym)
+def sparkline_svg(series, positive):
+    vals = [float(v) for v in series.tail(30)]
+    if len(vals) < 2:
+        return ""
+    lo, hi = min(vals), max(vals)
+    span = (hi - lo) or 1.0
+    W, H = 120.0, 34.0
+    pts = []
+    for i, v in enumerate(vals):
+        x = (i / (len(vals) - 1)) * W
+        y = H - 2 - ((v - lo) / span) * (H - 4)
+        pts.append(f"{x:.1f},{y:.1f}")
+    color = "#10b981" if positive else "#fb7185"
+    poly = " ".join(pts)
+    return f'<svg viewBox="0 0 {W:.0f} {H:.0f}" preserveAspectRatio="none" style="width:100%;height:34px"><polyline points="{poly}" fill="none" stroke="{color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 
-    st.markdown(f"#### {display}")
+def donut_html(spx, active, dry):
+    total = (spx + active + dry) or 1.0
+    C = 2 * math.pi * 70
+    segs = [(spx / total, "#10b981"), (active / total, "#0ea5e9"), (max(dry, 0) / total, "#f59e0b")]
+    off = 0.0
+    circ = ""
+    for frac, color in segs:
+        length = max(frac, 0.0) * C
+        circ += f'<circle cx="100" cy="100" r="70" fill="none" stroke="{color}" stroke-width="22" stroke-dasharray="{length:.2f} {C - length:.2f}" stroke-dashoffset="{-off * C:.2f}"/>'
+        off += frac
+    return f'''<div style="position:relative;width:200px;height:200px;margin:0 auto">
+<svg viewBox="0 0 200 200" style="transform:rotate(-90deg);width:200px;height:200px">
+<circle cx="100" cy="100" r="70" fill="none" stroke="#1e293b" stroke-width="22"/>
+{circ}
+</svg>
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+<div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#64748b">Total Value</div>
+<div style="font-family:ui-monospace,monospace;font-size:18px;font-weight:700;color:#ffffff">{DS}{total:,.0f}</div>
+</div></div>'''
 
-    if cur is None or high is None:
-        st.error("Market data unavailable for this symbol.")
-    else:
-        st.metric("Live Price", f"${cur:,.2f}")
-        drawdown = (cur - high) / high
+def _leg(color, name, desc, val, pct):
+    return f'<div class="qvn-legend" style="border-color:{color}33;background:{color}14"><div style="display:flex;align-items:center;gap:10px"><span style="width:12px;height:12px;border-radius:3px;background:{color}"></span><div><div class="qvn-leg-name">{name}</div><div class="qvn-leg-desc">{desc}</div></div></div><div style="text-align:right"><div class="qvn-leg-val">{val}</div><div class="qvn-leg-pct" style="color:{color}">{pct}</div></div></div>'
 
-        st.caption(f"52W High: ${high:,.2f} · Deviation: {drawdown:.1%}")
-        st.progress(min(abs(drawdown) / 0.40, 1.0))
-
-        if drawdown <= DCAX2_THRESHOLD:
-            st.error("⚠️ DCAX2 TRIGGERED: DEPLOY 3x BUY SIZE")
-        else:
-            st.info("Baseline DCA (1x)")
-
-        cost = pos["avg_cost"]
-        if cost > 0:
-            multiple = cur / cost
-            triggered = [lvl for lvl in MILESTONE_LEVELS if multiple >= lvl]
-            if triggered:
-                level = max(triggered)
-                gain_pct = (level - 1) * 100
-                st.warning(f"💰 MILESTONE TRIM TRIGGERED: +{gain_pct:.0f}% — LOCK IN PROFITS")
-
-        st.caption(f"Position Value: ${pos['shares'] * cur:,.2f}")
-
-        if sym in history:
-            st.line_chart(history[sym]["Close"].tail(30), height=80)
-
-    if st.button("❌ Remove", key=f"rem_{idx}"):
-        st.session_state.active_positions.pop(idx)
-        st.rerun()
-
-# ============================================================
-# MAIN APPLICATION
-# ============================================================
-
-def main():
-    if "active_positions" not in st.session_state:
-        st.session_state.active_positions = []
-
-    history, current_prices, high_52w = fetch_market_data()
-
-    # ================= SIDEBAR =================
-    with st.sidebar:
-        st.title("🏦 Financial Housekeeping")
-        st.markdown("---")
-
-        st.subheader("Pre-Investment Gate")
-        emergency_ok = st.checkbox("✔ 6–12 month emergency cash buffer secured", value=True)
-        debt_ok = st.checkbox("✔ 0% high-interest non-mortgage debt", value=True)
-        tax_ok = st.checkbox("✔ Tax-shield vehicles maximised (401k, IRA, HSA)", value=True)
-        if emergency_ok and debt_ok and tax_ok:
-            st.success("Gate cleared: deployment permitted")
-        else:
-            st.error("Gate closed: deploy only after all checks pass")
-
-        st.markdown("---")
-        st.subheader("Monthly Capital Split")
-        etf_pct = st.slider(
-            "S&P 500 ETF Allocation (%)",
-            min_value=0, max_value=100, value=50, step=5,
-            help="Percentage of each monthly contribution routed to SPY. "
-                 "Remainder flows to the single-stock dry powder pool.",
-        )
-        col_a, col_b = st.columns(2)
-        col_a.metric("SPY Allocation", f"{etf_pct}%")
-        col_b.metric("Dry Powder Pool", f"{100 - etf_pct}%")
-
-        st.markdown("---")
-        st.subheader("Portfolio Values ($)")
-        etf_value = st.number_input("Current SPY/ETF Value", min_value=0.0, value=50000.0, step=1000.0)
-        cash_value = st.number_input("Current Dry Powder Cash Reserve", min_value=0.0, value=25000.0, step=1000.0)
-
-        st.markdown("---")
-        st.subheader("🔐 Broker Integration")
-        # NOTE: these MUST be plain if/else statements (not a one-line
-        # "A if condition else B" shorthand), otherwise Streamlit prints
-        # internal debug text into the sidebar.
-        if read_secret("IBKR_TOKEN"):
-            st.success("IBKR token sealed in vault")
-        else:
-            st.info("Add IBKR_TOKEN to secrets for Interactive Brokers linking")
-        if read_secret("T212_TOKEN"):
-            st.success("Trading 212 token sealed in vault")
-        else:
-            st.info("Add T212_TOKEN to secrets for Trading 212 linking")
-
-        st.markdown("---")
-        st.caption("All data sourced from Yahoo Finance. Not financial advice.")
-
-    # ================= MAIN DASHBOARD =================
-    st.title("📈 S&P 500 Core Matrix — Automated Portfolio Tracker")
-
-    if current_prices.empty:
-        st.error("Market data fetch failed. Yahoo Finance may be rate-limiting. "
-                 "Please retry in a few minutes.")
-        return
-
-    header_col, refresh_col = st.columns([5, 1])
-    with header_col:
-        if SPY_TICKER in history:
-            last_session = history[SPY_TICKER].index[-1].strftime("%d %B %Y")
-            st.caption(f"Data through last close: **{last_session}** · Cache TTL: 60 minutes")
-    with refresh_col:
-        if st.button("🔄 Refresh Data", use_container_width=True):
-            fetch_market_data.clear()
-            st.rerun()
-
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total ETF Holdings", f"${etf_value:,.2f}")
-    col2.metric("Dry Powder Reserve", f"${cash_value:,.2f}")
-
-    total_stock_val = sum(
-        pos["shares"] * current_prices[TICKER_MAP[pos["ticker"]]]
-        for pos in st.session_state.active_positions
-        if TICKER_MAP[pos["ticker"]] in current_prices
-    )
-    col3.metric("Active Stock Value", f"${total_stock_val:,.2f}")
-    col4.metric("Total Portfolio", f"${etf_value + cash_value + total_stock_val:,.2f}")
-
-    st.markdown("---")
-
-    # ----- ACTIVE 10-STOCK COCKPIT -----
-    st.subheader(f"🎯 Active Single-Stock Workspace ({len(st.session_state.active_positions)} / {MAX_ACTIVE_STOCKS} slots)")
-
-    if len(st.session_state.active_positions) < MAX_ACTIVE_STOCKS:
-        with st.expander("➕ Add a new position", expanded=False):
-            with st.form("add_position_form", clear_on_submit=True):
-                held = [p["ticker"] for p in st.session_state.active_positions]
-                new_ticker = st.selectbox(
-                    "Select ticker",
-                    options=[t for t in TICKER_MAP if t not in held],
-                    index=None,
-                    placeholder="Choose a stock...",
-                )
-                avg_cost = st.number_input("Average Cost per Share ($)", min_value=0.01, value=100.0, step=1.0)
-                shares = st.number_input("Number of Shares", min_value=0.0, value=1.0, step=1.0)
-                if st.form_submit_button("Add to Cockpit") and new_ticker:
-                    st.session_state.active_positions.append({
-                        "ticker": new_ticker,
-                        "avg_cost": avg_cost,
-                        "shares": shares,
-                    })
-                    st.rerun()
-    else:
-        st.warning("Maximum 10 active positions reached. Remove one before adding another.")
-
-    if st.session_state.active_positions:
-        positions = st.session_state.active_positions
-        for row_start in range(0, len(positions), 5):
-            row = positions[row_start:row_start + 5]
-            cols = st.columns(len(row))
-            for col, pos in zip(cols, row):
-                with col:
-                    render_position_card(pos, row_start + row.index(pos),
-                                         current_prices, high_52w, history)
-    else:
-        st.info("No active positions yet. Use the form above to add up to 10 stocks.")
-
-    st.markdown("---")
-
-    # ----- GLOBAL MATRIX WATCHLIST -----
-    st.subheader("🌍 Global Matrix Watchlist (37 equities + SIVR)")
-    with st.expander("Click to expand full watchlist", expanded=False):
-        rows = []
-        for display, sym in TICKER_MAP.items():
-            cur = current_prices.get(sym)
-            high = high_52w.get(sym)
-            if cur is None or high is None:
-                rows.append({"Ticker": display, "Price": None, "52W High": None,
-                             "Deviation %": None, "DCA Status": "DATA UNAVAILABLE"})
-                continue
-            dev_pct = (cur - high) / high * 100
-            rows.append({
-                "Ticker": display,
-                "Price": cur,
-                "52W High": high,
-                "Deviation %": dev_pct,
-                "DCA Status": "⚠️ DCAX2" if dev_pct <= DCAX2_THRESHOLD * 100 else "Baseline",
-            })
-
-        df_watchlist = (
-            pd.DataFrame(rows)
-            .sort_values("Deviation %", ascending=True, na_position="last")
-            .reset_index(drop=True)
-        )
-        st.dataframe(
-            df_watchlist,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Ticker": st.column_config.TextColumn("Ticker"),
-                "Price": st.column_config.NumberColumn("Current Price", format="$%.2f"),
-                "52W High": st.column_config.NumberColumn("52-Week High", format="$%.2f"),
-                "Deviation %": st.column_config.NumberColumn("Deviation from High", format="%.1f%%"),
-                "DCA Status": st.column_config.TextColumn("Buy Signal"),
-            },
-        )
-        st.caption("Table sorted by deviation from 52-week high (largest discounts first).")
-
-    st.markdown("---")
-    st.caption("⚠️ This tool is for informational purposes only. "
-               "Past performance does not guarantee future results. "
-               "All trades are executed at the user's own risk.")
-
-# ============================================================
-# ENTRY POINT
-# ============================================================
-
-if __name__ == "__main__":
-    main()
+def legend_html(spx, active, dry):
+    total = (spx + active + dry) or 1.0
+    rows = [
+        _leg("#10b981", "S&amp;P 500 Index Core", "Baseline anchor", f"{DS}{spx:,.2f}", f"{spx / total * 100:.1f}%"),
+        _leg("#0ea5e9", "Active Stock Workspace", "DCAX2 operational slots", f"{DS}{active:
