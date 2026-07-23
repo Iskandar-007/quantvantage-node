@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <!-- ============================================================
+       QuantVantage Node — Institutional Wealth-Tech Landing Page
+       Stack: HTML5 + Tailwind CSS (CDN) + Vanilla JavaScript
+       Deploy targets: GitHub Pages / Vercel / Streamlit embed
+       ============================================================ -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuantVantage Node — Institutional Algorithmic Capital Allocation</title>
+  <meta name="description" content="QuantVantage Node anchors 50% of capital to the S&P 500 baseline and autonomously executes the 3x DCAX2 pullback rule across 38 target equities with Milestone Trim profit capture." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='8' fill='%23022c22'/%3E%3Cpath d='M9 22 L16 9 L23 22' stroke='%2310b981' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='16' cy='9' r='2.5' fill='%2310b981'/%3E%3C/svg%3E" />
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind Engine -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+          },
+          boxShadow: {
+            'glow': '0 0 48px -12px rgba(16, 185, 129, 0.40)',
+            'glow-amber': '0 0 48px -12px rgba(245, 158, 11, 0.35)',
+            'card': '0 20px 50px -24px rgba(0, 0, 0, 0.65)',
+          },
+          keyframes: {
+            ticker: {
+              '0%': { transform: 'translateX(0)' },
+              '100%': { transform: 'translateX(-50%)' },
+            },
+            pulseSoft: {
+              '0%, 100%': { opacity: '1' },
+              '50%': { opacity: '0.4' },
+            },
+            drawLine: {
+              '0%': { strokeDashoffset: '1200' },
+              '100%': { strokeDashoffset: '0' },
+            },
+          },
+          animation: {
+            ticker: 'ticker 46s linear infinite',
+            pulseSoft: 'pulseSoft 2.4s ease-in-out infinite',
+            drawLine: 'drawLine 2.6s ease-out forwards',
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    /* Progressive enhancement guard: reveal animations only run when JS is present */
+    .js .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .js .reveal.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Institutional grid backdrop */
+    .bg-grid {
+      background-image:
+        linear-gradient(to right, rgba(148, 163, 184, 0.055) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(148, 163, 184, 0.055) 1px, transparent 1px);
+      background-size: 44px 44px;
+    }
+
+    /* Equity curve draw-in */
+    .chart-line {
+      stroke-dasharray: 1200;
+      stroke-dashoffset: 1200;
+    }
+    .is-visible .chart-line {
+      animation: drawLine 2.6s ease-out forwards;
+    }
+
+    /* Ticker edge fade */
+    .ticker-mask {
+      mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+      -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+    }
+
+    ::selection { background: rgba(16, 185, 129, 0.35); color: #f8fafc; }
+  </style>
+
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+
+<body class="bg-slate-950 font-sans text-slate-300 antialiased selection:bg-emerald-500/30">
+
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-emerald-500 focus:px-4 focus:py-2 focus:text-slate-950">
+    Skip to content
+  </a>
+
+  <!-- ============================================================
+       MODULE 1 — STICKY NAVIGATION BAR
+       ============================================================ -->
+  <header id="site-header" class="fixed inset-x-0 top-0 z-50 border-b border-transparent transition-all duration-300">
+    <nav class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8" aria-label="Primary">
+      <!-- Brand -->
+      <a href="#top" class="group flex items-center gap-3">
+        <svg viewBox="0 0 32 32" class="h-9 w-9 transition-transform duration-300 group-hover:scale-105" aria-hidden="true">
+          <rect x="1.5" y="1.5" width="29" height="29" rx="8" class="fill-emerald-500/10 stroke-emerald-500/50" stroke-width="1.5"/>
+          <path d="M9 22 L16 9 L23 22" class="stroke-emerald-400" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="16" cy="9" r="2.6" class="fill-emerald-400"/>
+          <circle cx="9" cy="22" r="1.8" class="fill-emerald-500/70"/>
+          <circle cx="23" cy="22" r="1.8" class="fill-emerald-500/70"/>
+        </svg>
+        <span class="text-lg font-bold tracking-tight text-white">
+          QuantVantage <span class="text-emerald-400">Node</span>
+        </span>
+      </a>
+
+      <!-- Desktop Anchors -->
+      <div class="hidden items-center gap-8 md:flex">
+        <a data-navlink="features" href="#features" class="text-sm font-medium text-slate-400 transition-colors hover:text-white">Features</a>
+        <a data-navlink="system-logic" href="#system-logic" class="text-sm font-medium text-slate-400 transition-colors hover:text-white">System Logic</a>
+        <a data-navlink="tech-stack" href="#tech-stack" class="text-sm font-medium text-slate-400 transition-colors hover:text-white">Tech Stack</a>
+        <a data-navlink="pricing" href="#pricing" class="text-sm font-medium text-slate-400 transition-colors hover:text-white">Pricing</a>
+      </div>
+
+      <!-- CTA + Mobile Toggle -->
+      <div class="flex items-center gap-3">
+        <button data-open-modal class="hidden rounded-lg bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-glow transition hover:bg-emerald-400 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 md:inline-flex">
+          Launch App
+        </button>
+        <button id="mobile-toggle" class="inline-flex items-center justify-center rounded-lg border border-slate-700 p-2 text-slate-300 transition hover:border-slate-500 hover:text-white md:hidden" aria-expanded="false" aria-controls="mobile-menu" aria-label="Toggle navigation menu">
+          <svg id="icon-open" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
+          <svg id="icon-close" class="hidden h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden border-t border-slate-800 bg-slate-950/95 backdrop-blur md:hidden">
+      <div class="space-y-1 px-6 py-4">
+        <a href="#features" class="mobile-link block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white">Features</a>
+        <a href="#system-logic" class="mobile-link block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white">System Logic</a>
+        <a href="#tech-stack" class="mobile-link block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white">Tech Stack</a>
+        <a href="#pricing" class="mobile-link block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white">Pricing</a>
+        <button data-open-modal class="mobile-link mt-2 w-full rounded-lg bg-emerald-500 px-3 py-2.5 text-sm font-semibold text-slate-950 hover:bg-emerald-400">Launch App</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- ============================================================
+         MODULE 2 — PREMIUM HERO SECTION
+         ============================================================ -->
+    <section id="top" class="relative overflow-hidden bg-grid pt-36 pb-20 lg:pt-44 lg:pb-28">
+      <!-- Ambient glows -->
+      <div class="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[820px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-3xl" aria-hidden="true"></div>
+      <div class="pointer-events-none absolute -right-32 top-1/3 h-72 w-72 rounded-full bg-amber-500/5 blur-3xl" aria-hidden="true"></div>
+
+      <div class="relative mx-auto grid max-w-7xl items-center gap-16 px-6 lg:grid-cols-2 lg:px-8">
+        <!-- Copy Column -->
+        <div class="reveal">
+          <div class="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-emerald-300">
+            <span class="h-1.5 w-1.5 animate-pulseSoft rounded-full bg-emerald-400"></span>
+            Private Algorithmic Portfolio Hosting
+          </div>
+
+          <h1 class="text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl xl:text-6xl">
+            Institutional Algorithmic Capital Allocation.
+            <span class="bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-300 bg-clip-text text-transparent">Automated on Your Terms.</span>
+          </h1>
+
+          <p class="mt-6 max-w-xl text-lg leading-relaxed text-slate-400">
+            QuantVantage Node anchors <span class="font-semibold text-slate-200">50% of capital to the S&amp;P 500 baseline</span>,
+            then autonomously executes the <span class="font-semibold text-emerald-300">3x DCAX2 pullback rule</span> across
+            <span class="font-semibold text-slate-200">38 curated target equities</span> — with Milestone Trim profit capture
+            compounding gains while you sleep.
+          </p>
+
+          <div class="mt-9 flex flex-col gap-4 sm:flex-row">
+            <button data-open-modal class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-7 py-3.5 text-sm font-semibold text-slate-950 shadow-glow transition hover:bg-emerald-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">
+              Deploy Your Node
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5-5 5M6 12h12"/></svg>
+            </button>
+            <a href="#system-logic" class="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-700 px-7 py-3.5 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800/60">
+              Read the System Logic
+            </a>
+          </div>
+
+          <!-- Stat Row -->
+          <dl class="mt-12 grid grid-cols-2 gap-6 border-t border-slate-800 pt-8 sm:grid-cols-4">
+            <div>
+              <dt class="text-xs uppercase tracking-wider text-slate-500">Target Equities</dt>
+              <dd class="mt-1 font-mono text-2xl font-semibold text-white"><span data-count="38">0</span></dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wider text-slate-500">Operational Slots</dt>
+              <dd class="mt-1 font-mono text-2xl font-semibold text-white"><span data-count="10">0</span></dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wider text-slate-500">Baseline Anchor</dt>
+              <dd class="mt-1 font-mono text-2xl font-semibold text-emerald-400"><span data-count="50">0</span>%</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wider text-slate-500">Monitoring</dt>
+              <dd class="mt-1 font-mono text-2xl font-semibold text-white">24/7</dd>
+            </div>
+          </dl>
+        </div>
+
+        <!-- Dashboard Mockup Column -->
+        <div class="reveal relative" style="transition-delay: 150ms;">
+          <div class="absolute -inset-4 rounded-3xl bg-emerald-500/5 blur-2xl" aria-hidden="true"></div>
+          <div class="relative rounded-2xl border border-slate-800 bg-slate-900/80 shadow-card backdrop-blur">
+            <!-- Panel Header -->
+            <div class="flex items-center justify-between border-b border-slate-800 px-6 py-4">
+              <div class="flex items-center gap-2.5">
+                <span class="h-2 w-2 animate-pulseSoft rounded-full bg-emerald-400"></span>
+                <span class="font-mono text-xs font-semibold tracking-wider text-slate-300">NODE-01 · LIVE</span>
+              </div>
+              <span class="rounded-md bg-slate-800 px-2.5 py-1 font-mono text-[10px] text-slate-400">DCAX2 v3.1</span>
+            </div>
+
+            <!-- Equity Curve -->
+            <div class="px-6 pt-6">
+              <div class="mb-3 flex items-end justify-between">
+                <div>
+                  <p class="text-xs text-slate-500">Composite Equity Curve</p>
+                  <p class="font-mono text-xl font-semibold text-white">$1,284,902<span class="ml-2 text-sm font-medium text-emerald-400">+18.42%</span></p>
+                </div>
+                <span class="rounded-md bg-emerald-500/10 px-2 py-1 font-mono text-[10px] font-semibold text-emerald-300">YTD</span>
+              </div>
+              <svg viewBox="0 0 480 200" class="h-44 w-full" role="img" aria-label="Rising equity curve with milestone trim markers">
+                <defs>
+                  <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#10b981" stop-opacity="0.28"/>
+                    <stop offset="100%" stop-color="#10b981" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <!-- Gridlines -->
+                <g stroke="#1e293b" stroke-width="1">
+                  <line x1="0" y1="50" x2="480" y2="50"/><line x1="0" y1="100" x2="480" y2="100"/><line x1="0" y1="150" x2="480" y2="150"/>
+                </g>
+                <!-- Milestone trim threshold -->
+                <line x1="0" y1="58" x2="480" y2="58" stroke="#f59e0b" stroke-width="1" stroke-dasharray="5 5" opacity="0.55"/>
+                <!-- Area + Line -->
+                <path d="M0,150 L30,142 L60,146 L90,120 L120,128 L150,104 L180,112 L210,88 L240,96 L270,70 L300,84 L330,58 L360,66 L390,44 L420,52 L450,30 L480,38 L480,200 L0,200 Z" fill="url(#areaFill)"/>
+                <polyline class="chart-line" points="0,150 30,142 60,146 90,120 120,128 150,104 180,112 210,88 240,96 270,70 300,84 330,58 360,66 390,44 420,52 450,30 480,38" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <!-- DCAX2 entry markers -->
+                <circle cx="90" cy="120" r="4.5" fill="#022c22" stroke="#10b981" stroke-width="2"/>
+                <circle cx="240" cy="96" r="4.5" fill="#022c22" stroke="#10b981" stroke-width="2"/>
+                <!-- Milestone Trim markers -->
+                <circle cx="330" cy="58" r="4.5" fill="#451a03" stroke="#f59e0b" stroke-width="2"/>
+                <circle cx="450" cy="30" r="4.5" fill="#451a03" stroke="#f59e0b" stroke-width="2"/>
+                <text x="338" y="52" fill="#fbbf24" font-size="10" font-family="JetBrains Mono, monospace">M2 TRIM</text>
+              </svg>
+            </div>
+
+            <!-- Telemetry Chips -->
+            <div class="grid grid-cols-3 gap-3 px-6 py-5">
+              <div class="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2.5">
+                <p class="text-[10px] uppercase tracking-wider text-slate-500">Baseline</p>
+                <p class="font-mono text-sm font-semibold text-white">50.0%</p>
+              </div>
+              <div class="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2.5">
+                <p class="text-[10px] uppercase tracking-wider text-slate-500">DCAX2 Trigger</p>
+                <p class="font-mono text-sm font-semibold text-emerald-400">3.0x</p>
+              </div>
+              <div class="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2.5">
+                <p class="text-[10px] uppercase tracking-wider text-slate-500">Trim Level</p>
+                <p class="font-mono text-sm font-semibold text-amber-400">M2</p>
+              </div>
+            </div>
+
+            <!-- Slot Usage + Positions -->
+            <div class="border-t border-slate-800 px-6 py-5">
+              <div class="mb-4">
+                <div class="mb-1.5 flex justify-between text-xs">
+                  <span class="text-slate-500">Operational Slots</span>
+                  <span class="font-mono font-semibold text-slate-200">7 / 10 Active</span>
+                </div>
+                <div class="h-1.5 overflow-hidden rounded-full bg-slate-800">
+                  <div class="h-full w-[70%] rounded-full bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+                </div>
+              </div>
+              <ul class="space-y-2 font-mono text-xs">
+                <li class="flex items-center justify-between rounded-md bg-slate-950/60 px-3 py-2">
+                  <span class="font-semibold text-slate-200">NVDA</span>
+                  <span class="text-slate-500">L1 · Compute</span>
+                  <span class="font-semibold text-emerald-400">+24.8%</span>
+                </li>
+                <li class="flex items-center justify-between rounded-md bg-slate-950/60 px-3 py-2">
+                  <span class="font-semibold text-slate-200">CEG</span>
+                  <span class="text-slate-500">L2 · Power</span>
+                  <span class="font-semibold text-emerald-400">+11.3%</span>
+                </li>
+                <li class="flex items-center justify-between rounded-md border border-amber-500/25 bg-amber-500/5 px-3 py-2">
+                  <span class="font-semibold text-slate-200">VRT</span>
+                  <span class="text-amber-400/80">L2 · Cooling Lead-Time Flag</span>
+                  <span class="font-semibold text-amber-400">WATCH</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         MODULE 3 — LIVE TICKER TAPE (38-Equity Surveillance Universe)
+         ============================================================ -->
+    <section class="border-y border-slate-800 bg-slate-900/50 py-4" aria-label="Market ticker">
+      <div class="ticker-mask overflow-hidden">
+        <div id="ticker-track" class="flex w-max animate-ticker items-center gap-10 pr-10 font-mono text-xs"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         MODULE 4 — FEATURES GRID
+         ============================================================ -->
+    <section id="features" class="scroll-mt-24 py-24 lg:py-32">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="reveal mx-auto max-w-2xl text-center">
+          <p class="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-400">Platform Capabilities</p>
+          <h2 class="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">Engineered for Disciplined Capital Deployment</h2>
+          <p class="mt-4 text-slate-400">Every module of the Node operates under strict rule-based governance — no discretion, no drift, no emotional execution.</p>
+        </div>
+
+        <div class="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <!-- Feature Card Template -->
+          <div class="reveal group rounded-2xl border border-slate-800 bg-slate-900/60 p-7 transition duration-300 hover:-translate-y-1 hover:border-emerald-500/40 hover:shadow-glow">
+            <div class="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white">DCAX2 Pullback Engine</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Continuously computes dynamic volatility bands across 38 equities and triggers accumulation only when drawdowns breach the 3x DCAX2 threshold.</p>
+          </div>
+
+          <div class="reveal group rounded-2xl border border-slate-800 bg-slate-900/60 p-7 transition duration-300 hover:-translate-y-1 hover:border-amber-500/40 hover:shadow-glow-amber" style="transition-delay: 80ms;">
+            <div class="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-400">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14l-4 4m0 0v-4m0 4h4m6-10l4-4m0 0v4m0-4h-4M5 5l14 14"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white">Milestone Trim Automation</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Systematically harvests profits at M1 through M4 milestone intervals, recycling capital back into the baseline anchor without manual intervention.</p>
+          </div>
+
+          <div class="reveal group rounded-2xl border border-slate-800 bg-slate-900/60 p-7 transition duration-300 hover:-translate-y-1 hover:border-emerald-500/40 hover:shadow-glow" style="transition-delay: 160ms;">
+            <div class="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m0-18c-4 0-7 4-7 9s3 9 7 9m0-18c4 0 7 4 7 9s-3 9-7 9"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white">Baseline Anchor Protocol</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">A permanent 50% allocation to the S&amp;P 500 index core provides structural beta while the algorithmic sleeve pursues asymmetric entry points.</p>
+          </div>
+
+          <div class="reveal group rounded-2xl border border-slate-800 bg-slate-900/60 p-7 transition duration-300 hover:-translate-y-1 hover:border-emerald-500/40 hover:shadow-glow">
+            <div class="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white">Brokerage API Sync</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Native read/write synchronization with Interactive Brokers and Trading 212 APIs. Orders route directly from your Node to your own brokerage account.</p>
+          </div>
+
+          <div class="reveal group rounded-2xl border border-slate-800 bg-slate-900/60 p-7 transition duration-300 hover:-translate-y-1 hover:border-emerald-500/40 hover:shadow-glow" style="transition-delay: 80ms;">
+            <div class="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2l7 4v6c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-4z"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white">Private Node Hosting</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Your API keys, your capital, your infrastructure. The Node runs as an isolated tenant with end-to-end encryption and zero custody of funds.</p>
+          </div>
+
+          <div class="reveal group rounded-2xl border border-slate-800 bg-slate-900/60 p-7 transition duration-300 hover:-translate-y-1 hover:border-amber-500/40 hover:shadow-glow-amber" style="transition-delay: 160ms;">
+            <div class="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-400">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-white">Conditional Alert Grid</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Amber-flag telemetry surfaces supply-chain bottlenecks, regulatory shifts, and liquidity constraints before they impair an open position.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         MODULE 5 — SYSTEM LOGIC PIPELINE
+         ============================================================ -->
+    <section id="system-logic" class="scroll-mt-24 border-y border-slate-800 bg-slate-900/40 py-24 lg:py-32">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="reveal mx-auto max-w-2xl text-center">
+          <p class="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-400">Deterministic Execution</p>
+          <h2 class="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">The System Logic, Step by Step</h2>
+          <p class="mt-4 text-slate-400">A closed-loop allocation pipeline governed entirely by code. Every dollar movement maps to one of four auditable states.</p>
+        </div>
+
+        <ol class="relative mx-auto mt-16 max-w-3xl space-y-10 border-l border-slate-800 pl-8 sm:pl-10">
+          <!-- Step 01 -->
+          <li class="reveal relative">
+            <span class="absolute -left-[41px] flex h-7 w-7 items-center justify-center rounded-full border border-emerald-500/50 bg-slate-950 font-mono text-[10px] font-bold text-emerald-400 sm:-left-[51px]">01</span>
+            <h3 class="text-lg font-semibold text-white">Baseline Anchor Deployment</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Upon capital intake, exactly 50% is routed into a low-cost S&amp;P 500 index core. This anchor compounds passively and acts as the portfolio's structural gravity well.</p>
+            <p class="mt-3 inline-block rounded-md bg-slate-800/80 px-3 py-1 font-mono text-xs text-emerald-300">ALLOCATION → SPX_CORE = 0.50</p>
+          </li>
+
+          <!-- Step 02 -->
+          <li class="reveal relative">
+            <span class="absolute -left-[41px] flex h-7 w-7 items-center justify-center rounded-full border border-emerald-500/50 bg-slate-950 font-mono text-[10px] font-bold text-emerald-400 sm:-left-[51px]">02</span>
+            <h3 class="text-lg font-semibold text-white">DCAX2 Surveillance Sweep</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">The engine scans all 38 target equities on a continuous loop. When an asset's drawdown exceeds <span class="font-semibold text-emerald-300">3x its DCAX2 volatility band</span>, a conditional buy signal is armed and validated against liquidity gates.</p>
+            <p class="mt-3 inline-block rounded-md bg-slate-800/80 px-3 py-1 font-mono text-xs text-emerald-300">IF DRAWDOWN ≥ 3.0 × DCAX2 → ARM_ENTRY()</p>
+          </li>
+
+          <!-- Step 03 -->
+          <li class="reveal relative">
+            <span class="absolute -left-[41px] flex h-7 w-7 items-center justify-center rounded-full border border-emerald-500/50 bg-slate-950 font-mono text-[10px] font-bold text-emerald-400 sm:-left-[51px]">03</span>
+            <h3 class="text-lg font-semibold text-white">Operational Slot Activation</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Validated signals fill up to 10 concurrent operational slots, ranked by layer conviction within the Tech Stack Matrix. Slot capacity prevents over-concentration automatically.</p>
+            <p class="mt-3 inline-block rounded-md bg-slate-800/80 px-3 py-1 font-mono text-xs text-emerald-300">MAX_SLOTS = 10 · RANK_BY = LAYER_WEIGHT</p>
+          </li>
+
+          <!-- Step 04 -->
+          <li class="reveal relative">
+            <span class="absolute -left-[41px] flex h-7 w-7 items-center justify-center rounded-full border border-amber-500/50 bg-slate-950 font-mono text-[10px] font-bold text-amber-400 sm:-left-[51px]">04</span>
+            <h3 class="text-lg font-semibold text-white">Milestone Trim &amp; Capital Recycling</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">As positions appreciate through milestone gates M1–M4, the Node trims predefined fractions and recycles proceeds into the baseline anchor — locking gains without exiting the thesis prematurely.</p>
+            <p class="mt-3 inline-block rounded-md border border-amber-500/25 bg-amber-500/10 px-3 py-1 font-mono text-xs text-amber-300">AT MILESTONE_Mn → TRIM(fraction) → RECYCLE_TO_BASELINE</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         MODULE 6 — 4-LAYER INTERACTIVE TECH STACK MATRIX
+         ============================================================ -->
+    <section id="tech-stack" class="scroll-mt-24 py-24 lg:py-32">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="reveal mx-auto max-w-2xl text-center">
+          <p class="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-400">The 38-Equity Universe, Structured</p>
+          <h2 class="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">4-Layer Tech Stack Matrix</h2>
+          <p class="mt-4 text-slate-400">Conviction weighting flows through four industrial layers of the AI buildout. Select a layer to inspect its holdings and bottleneck telemetry.</p>
+        </div>
+
+        <div class="mt-16 grid gap-8 lg:grid-cols-[340px_1fr]">
+          <!-- Layer Selector -->
+          <div class="reveal flex flex-col gap-3" role="tablist" aria-label="Tech stack layers">
+            <button data-layer-btn="1" role="tab" aria-selected="true" class="layer-btn group flex items-center gap-4 rounded-xl border border-emerald-500/50 bg-emerald-500/10 px-5 py-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">
+              <span class="layer-index font-mono text-sm font-bold text-emerald-400">L1</span>
+              <span>
+                <span class="layer-title block text-sm font-semibold text-white">Core Compute Engine</span>
+                <span class="layer-sub block text-xs text-slate-400">NVDA · SKHY</span>
+              </span>
+              <span class="ml-auto font-mono text-xs text-emerald-300">35%</span>
+            </button>
+
+            <button data-layer-btn="2" role="tab" aria-selected="false" class="layer-btn group flex items-center gap-4 rounded-xl border border-slate-800 bg-slate-900/60 px-5 py-4 text-left transition hover:border-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">
+              <span class="layer-index font-mono text-sm font-bold text-slate-500 group-hover:text-slate-300">L2</span>
+              <span>
+                <span class="layer-title block text-sm font-semibold text-slate-200">Power &amp; Cooling</span>
+                <span class="layer-sub block text-xs text-slate-500">VRT · CEG</span>
+              </span>
+              <span class="ml-auto font-mono text-xs text-slate-500">25%</span>
+            </button>
+
+            <button data-layer-btn="3" role="tab" aria-selected="false" class="layer-btn group flex items-center gap-4 rounded-xl border border-slate-800 bg-slate-900/60 px-5 py-4 text-left transition hover:border-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">
+              <span class="layer-index font-mono text-sm font-bold text-slate-500 group-hover:text-slate-300">L3</span>
+              <span>
+                <span class="layer-title block text-sm font-semibold text-slate-200">Orchestration &amp; Data</span>
+                <span class="layer-sub block text-xs text-slate-500">PLTR</span>
+              </span>
+              <span class="ml-auto font-mono text-xs text-slate-500">22%</span>
+            </button>
+
+            <button data-layer-btn="4" role="tab" aria-selected="false" class="layer-btn group flex items-center gap-4 rounded-xl border border-slate-800 bg-slate-900/60 px-5 py-4 text-left transition hover:border-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">
+              <span class="layer-index font-mono text-sm font-bold text-slate-500 group-hover:text-slate-300">L4</span>
+              <span>
+                <span class="layer-title block text-sm font-semibold text-slate-200">Embodied Robotics</span>
+                <span class="layer-sub block text-xs text-slate-500">TSLA</span>
+              </span>
+              <span class="ml-auto font-mono text-xs text-slate-500">18%</span>
+            </button>
+          </div>
+
+          <!-- Layer Detail Panels -->
+          <div class="reveal" style="transition-delay: 120ms;">
+            <!-- Panel L1 -->
+            <div data-layer-panel="1" class="layer-panel rounded-2xl border border-slate-800 bg-slate-900/60 p-8 shadow-card">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <h3 class="text-xl font-bold text-white">Layer 1 — Core Compute Engine</h3>
+                <span class="rounded-full bg-emerald-500/10 px-3 py-1 font-mono text-xs font-semibold text-emerald-300">CONVICTION WEIGHT · 35%</span>
+              </div>
+              <p class="mt-4 text-sm leading-relaxed text-slate-400">The foundational acceleration layer. GPU silicon and high-bandwidth memory form the hardest supply constraint of the entire AI buildout — making this layer the primary DCAX2 accumulation target during volatility shocks.</p>
+              <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
+                  <div class="flex items-center justify-between">
+                    <span class="font-mono text-lg font-bold text-white">NVDA</span>
+                    <span class="rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">Primary</span>
+                  </div>
+                  <p class="mt-1 text-xs text-slate-500">NVIDIA Corporation</p>
+                  <p class="mt-3 text-xs leading-relaxed text-slate-400">Data-center GPU monopoly with full-stack CUDA lock-in and networking integration.</p>
+                </div>
+                <div class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5">
+                  <div class="flex items-center justify-between">
+                    <span class="font-mono text-lg font-bold text-white">SKHY</span>
+                    <span class="rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">Bottleneck</span>
+                  </div>
+                  <p class="mt-1 text-xs text-slate-500">SK Hynix Inc.</p>
+                  <p class="mt-3 text-xs leading-relaxed text-amber-200/70">HBM4 allocation and advanced packaging capacity remain the binding constraint on accelerator output.</p>
+                </div>
+              </div>
+              <div class="mt-6">
+                <div class="mb-1.5 flex justify-between text-xs"><span class="text-slate-500">DCAX2 Sensitivity</span><span class="font-mono text-emerald-300">Very High</span></div>
+                <div class="h-1.5 overflow-hidden rounded-full bg-slate-800"><div class="h-full w-[92%] rounded-full bg-gradient-to-r from-emerald-500 to-teal-400"></div></div>
+              </div>
+            </div>
+
+            <!-- Panel L2 -->
+            <div data-layer-panel="2" class="layer-panel hidden rounded-2xl border border-slate-800 bg-slate-900/60 p-8 shadow-card">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <h3 class="text-xl font-bold text-white">Layer 2 — Power &amp; Cooling Infrastructure</h3>
+                <span class="rounded-full bg-emerald-500/10 px-3 py-1 font-mono text-xs font-semibold text-emerald-300">CONVICTION WEIGHT · 25%</span>
+              </div>
+              <p class="mt-4 text-sm leading-relaxed text-slate-400">Compute cannot run without electrons and thermal management. This layer captures the physical bottlenecks — grid-scale generation and liquid cooling — that cap data-center expansion timelines.</p>
+              <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                <div class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5">
+                  <div class="flex items-center justify-between">
+                    <span class="font-mono text-lg font-bold text-white">VRT</span>
+                    <span class="rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">Bottleneck</span>
+                  </div>
+                  <p class="mt-1 text-xs text-slate-500">Vertiv Holdings Co.</p>
+                  <p class="mt-3 text-xs leading-relaxed text-amber-200/70">Cooling system lead times extend 40+ weeks; order backlog visibility drives trim cadence.</p>
+                </div>
+                <div class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5">
+                  <div class="flex items-center justify-between">
+                    <span class="font-mono text-lg font-bold text-white">CEG</span>
+                    <span class="rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">Bottleneck</span>
+                  </div>
+                  <p class="mt-1 text-xs text-slate-500">Constellation Energy Corp.</p>
+                  <p class="mt-3 text-xs leading-relaxed text-amber-200/70">Grid interconnection queues constrain nuclear-backed hyperscale power purchase agreements.</p>
+                </div>
+              </div>
+              <div class="mt-6">
+                <div class="mb-1.5 flex justify-between text-xs"><span class="text-slate-500">DCAX2 Sensitivity</span><span class="font-mono text-emerald-300">High</span></div>
+                <div class="h-1.5 overflow-hidden rounded-full bg-slate-800"><div class="h-full w-[74%] rounded-full bg-gradient-to-r from-emerald-500 to-teal-400"></div></div>
+              </div>
+            </div>
+
+            <!-- Panel L3 -->
+            <div data-layer-panel="3" class="layer-panel hidden rounded-2xl border border-slate-800 bg-slate-900/60 p-8 shadow-card">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <h3 class="text-xl font-bold text-white">Layer 3 — Orchestration &amp; Data</h3>
+                <span class="rounded-full bg-emerald-500/10 px-3 py-1 font-mono text-xs font-semibold text-emerald-300">CONVICTION WEIGHT · 22%</span>
+              </div>
+              <p class="mt-4 text-sm leading-relaxed text-slate-400">The intelligence routing layer. Ontology-driven decision platforms convert raw compute into enterprise-grade operational outcomes — the software that makes silicon economically productive.</p>
+              <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
+                  <div class="flex items-center justify-between">
+                    <span class="font-mono text-lg font-bold text-white">PLTR</span>
+                    <span class="rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">Primary</span>
+                  </div>
+                  <p class="mt-1 text-xs text-slate-500">Palantir Technologies Inc.</p>
+                  <p class="mt-3 text-xs leading-relaxed text-slate-400">Dual government-commercial moat with accelerating AI platform adoption across regulated industries.</p>
+                </div>
+                <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
+                  <div class="flex items-center justify-between">
+                    <span class="font-mono text-lg font-bold text-white">STATUS</span>
+                    <span class="rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">Clear</span>
+                  </div>
+                  <p class="mt-1 text-xs text-slate-500">Bottleneck Telemetry</p>
+                  <p class="mt-3 text-xs leading-relaxed text-emerald-200/70">No active supply constraints detected. Amber alert grid dormant for this layer.</p>
+                </div>
+              </div>
+              <div class="mt-6">
+                <div class="mb-1.5 flex justify-between text-xs"><span class="text-slate-500">DCAX2 Sensitivity</span><span class="font-mono text-emerald-300">Moderate</span></div>
+                <div class="h-1.5 overflow-hidden rounded-full bg-slate-800"><div class="h-full w-[58%] rounded-full bg-gradient-to-r from-emerald-500 to-teal-400"></div></div>
+              </div>
+            </div>
+
+            <!-- Panel L4 -->
+            <div data-layer-panel="4" class="layer-panel hidden rounded-2xl border border-slate-800 bg-slate-900/60 p-8 shadow-card">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <h3 class="text-xl font-bold text-white">Layer 4 — Embodied Robotics</h3>
+                <span class="rounded-full bg-emerald-500/10 px-3 py-1 font-mono text-xs font-semibold text-emerald-300">CONVICTION WEIGHT · 18%</span>
+              </div>
+              <p class="mt-4 text-sm leading-relaxed text-slate-400">Physical AI optionality. Humanoid robotics and autonomous transport represent the terminal market where trained models escape the data center — sized conservatively as a long-horizon convex bet.</p>
+              <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
+                  <div class="flex items-center justify-between">
+                    <span class="font-mono text-lg font-bold text-white">TSLA</span>
+                    <span class="rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">Primary</span>
+                  </div>
+                  <p class="mt-1 text-xs text-slate-500">Tesla, Inc.</p>
+                  <p class="mt-3 text-xs leading-relaxed text-slate-400">Vertically integrated inference-at-the-edge stack: silicon, vehicles, and humanoid actuators.</p>
+                </div>
+                <div class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5">
+                  <div class="flex items-center justify-between">
+                    <span class="font-mono text-lg font-bold text-white">FLAG</span>
+                    <span class="rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">Conditional</span>
+                  </div>
+                  <p class="mt-1 text-xs text-slate-500">Regulatory Telemetry</p>
+                  <p class="mt-3 text-xs leading-relaxed text-amber-200/70">Autonomy approval timelines monitored; position sizing auto-reduces on amber escalation.</p>
+                </div>
+              </div>
+              <div class="mt-6">
+                <div class="mb-1.5 flex justify-between text-xs"><span class="text-slate-500">DCAX2 Sensitivity</span><span class="font-mono text-emerald-300">Elevated</span></div>
+                <div class="h-1.5 overflow-hidden rounded-full bg-slate-800"><div class="h-full w-[66%] rounded-full bg-gradient-to-r from-emerald-500 to-teal-400"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         MODULE 7 — DYNAMIC PRICING ARCHITECTURE
+         ============================================================ -->
+    <section id="pricing" class="scroll-mt-24 border-t border-slate-800 bg-slate-900/40 py-24 lg:py-32">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="reveal mx-auto max-w-2xl text-center">
+          <p class="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-400">Subscription Architecture</p>
+          <h2 class="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">Deploy at Your Scale</h2>
+          <p class="mt-4 text-slate-400">Transparent SaaS pricing. No performance fees, no custody, no hidden spreads. Cancel anytime.</p>
+
+          <!-- Billing Toggle -->
+          <div class="mt-8 inline-flex items-center gap-4 rounded-full border border-slate-800 bg-slate-950/80 px-5 py-2.5">
+            <span id="label-monthly" class="text-sm font-semibold text-white">Monthly</span>
+            <button id="billing-toggle" role="switch" aria-checked="false" aria-label="Toggle annual billing" class="relative h-6 w-11 rounded-full bg-slate-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">
+              <span id="toggle-knob" class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-300"></span>
+            </button>
+            <span id="label-annual" class="text-sm font-medium text-slate-500">Annual <span class="ml-1 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold text-emerald-300">−20%</span></span>
+          </div>
+        </div>
+
+        <div class="mt-16 grid gap-8 lg:grid-cols-3">
+          <!-- Lite Tier -->
+          <div class="reveal flex flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-8 transition duration-300 hover:border-slate-600">
+            <h3 class="text-sm font-semibold uppercase tracking-widest text-slate-400">Lite Tier</h3>
+            <p class="mt-2 text-xs text-slate-500">Signal intelligence for self-directed operators.</p>
+            <div class="mt-6 flex items-baseline gap-1">
+              <span class="font-mono text-4xl font-bold text-white">$<span data-price data-monthly="19" data-annual="15">19</span></span>
+              <span class="text-sm text-slate-500">/mo</span>
+            </div>
+            <p class="billing-note mt-1 h-4 text-xs text-emerald-400 opacity-0 transition-opacity">Billed annually — 20% efficiency gain</p>
+            <ul class="mt-7 flex-1 space-y-3 text-sm">
+              <li class="flex gap-3"><svg class="mt-0.5 h-4 w-4 flex-none text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="text-slate-300"><strong class="text-white">3 active operational slots</strong></span></li>
+              <li class="flex gap-3"><svg class="mt-0.5 h-4 w-4 flex-none text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="text-slate-300">Full 38-equity DCAX2 signal feed</span></li>
+              <li class="flex gap-3"><svg class="mt-0.5 h-4 w-4 flex-none text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="text-slate-300">Baseline anchor tracker (50% SPX)</span></li>
+              <li class="flex gap-3"><svg class="mt-0.5 h-4 w-4 flex-none text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="text-slate-300">Email alert delivery</span></li>
+              <li class="flex gap-3 text-slate-600"><svg class="mt-0.5 h-4 w-4 flex-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg><span>Brokerage API execution sync</span></li>
+            </ul>
+            <button data-open-modal class="mt-8 w-full rounded-lg border border-slate-700 py-3 text-sm font-semibold text-slate-200 transition hover:border-emerald-500/60 hover:text-white">Start with Lite</button>
+          </div>
+
+          <!-- Pro Tier (Featured) -->
+          <div class="reveal relative flex flex-col rounded-2xl border border-emerald-500/50 bg-slate-900/80 p-8 shadow-glow" style="transition-delay: 100ms;">
+            <span class="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-4 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-950">Most Deployed</span>
+            <h3 class="text-sm font-semibold uppercase tracking-widest text-emerald-400">Pro Tier</h3>
+            <p class="mt-2 text-xs text-slate-400">Full-stack automation with direct brokerage execution.</p>
+            <div class="mt-6 flex items-baseline gap-1">
+              <span class="font-mono text-4xl font-bold text-white">$<span data-price data-monthly="49" data-annual="39">49</span></span>
+              <span class="text-sm text-slate-500">/mo</span>
+            </div>
+            <p class="billing-note mt-1 h-4 text-xs text-emerald-400 opacity-0 transition-opacity">Billed annually — 20% efficiency gain</p>
+            <ul class="mt-7 flex-1 space-y-3 text-sm">
+              <li class="flex gap-3"><svg class="mt-0.5 h-4 w-4 flex-none text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="text-slate-300"><strong class="text-white">All 10 operational slots active</strong></span></li>
+              <li class="flex gap-3"><svg class="mt-0.5 h-4 w-4 flex-none text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="text-slate-300"><strong class="text-white">IBKR + Trading 212 API sync</strong> — live order routing</span></li>
+              <li class="flex gap-3"><svg class="mt-0.5 h-4 w-4 flex-none text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="text-slate-300">Milestone Trim full automation (M1–M4)</span></li>
+              <li class="flex gap-3"><svg class="mt-0.5 h-4 w-4 flex-none text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="text-slate-300">Amber conditional alert grid + push telemetry</span></li>
+              <li class="flex gap-3"><svg class="mt-0.5 h-4 w-4 flex-none text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="text-slate-300">Priority signal latency (sub-200ms)</span></li>
+            </ul>
+            <button data-open-modal class="mt-8 w-full rounded-lg bg-emerald-500 py-3 text-sm font-semibold text-slate-950 shadow-glow transition hover:bg-emerald-400">Deploy Pro Node</button>
+          </div>
+
+          <!-- Desk Tier -->
+          <div class="reveal flex flex-col rounded-2xl border border-slate-800 bg-slate-900/60 p-8 transition duration-300 hover:border-slate-600" style="transition-delay: 200ms;">
+            <h3 class="text-sm font-semibold uppercase tracking-widest text-slate-400">Desk Tier</h3>
+            <p class="mt-2 text-xs text-slate-500">Multi-node infrastructure for family offices.</p>
+            <div class="mt-6 flex items-baseline gap-1">
+              <span class="font-mono text-4xl font-bold text-white">Custom</span>
+            </div>
+            <p class="mt-1 h-4 text-xs text-slate-600">Volume-based licensing</p>
+            <ul class="mt-7 flex-1 space-y-3 text-sm">
+              <li class="flex gap-3"><svg class="mt-0.5 h-4 w-4 flex-none text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="text-slate-300">Unlimited concurrent Nodes</span></li>
+              <li class="flex gap-3"><svg class="mt-0.5 h-4 w-4 flex-none text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="text-slate-300">Team seats with role-based access</span></li>
+              <li class="flex gap-3"><svg class="mt-0.5 h-4 w-4 flex-none text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="text-slate-300">Webhook + FIX stream egress</span></li>
+              <li class="flex gap-3"><svg class="mt-0.5 h-4 w-4 flex-none text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg><span class="text-slate-300">Dedicated deployment engineer</span></li>
+            </ul>
+            <button data-open-modal class="mt-8 w-full rounded-lg border border-slate-700 py-3 text-sm font-semibold text-slate-200 transition hover:border-emerald-500/60 hover:text-white">Contact the Desk</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         MODULE 8 — CLOSING CTA
+         ============================================================ -->
+    <section class="relative overflow-hidden py-24">
+      <div class="pointer-events-none absolute inset-0 bg-grid opacity-60" aria-hidden="true"></div>
+      <div class="pointer-events-none absolute left-1/2 top-1/2 h-72 w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500/10 blur-3xl" aria-hidden="true"></div>
+      <div class="reveal relative mx-auto max-w-3xl px-6 text-center">
+        <h2 class="text-3xl font-bold tracking-tight text-white sm:text-4xl">Your Capital Deserves an Algorithm, Not an Opinion.</h2>
+        <p class="mx-auto mt-4 max-w-xl text-slate-400">Provision a private Node in under ten minutes. Connect your brokerage, set your baseline, and let the DCAX2 engine stand watch.</p>
+        <button data-open-modal class="mt-9 inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-8 py-4 text-sm font-semibold text-slate-950 shadow-glow transition hover:bg-emerald-400">
+          Launch App
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5-5 5M6 12h12"/></svg>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================================================
+       MODULE 9 — FOOTER
+       ============================================================ -->
+  <footer class="border-t border-slate-800 bg-slate-950 py-14">
+    <div class="mx-auto max-w-7xl px-6 lg:px-8">
+      <div class="flex flex-col justify-between gap-10 md:flex-row">
+        <div class="max-w-sm">
+          <div class="flex items-center gap-3">
+            <svg viewBox="0 0 32 32" class="h-8 w-8" aria-hidden="true">
+              <rect x="1.5" y="1.5" width="29" height="29" rx="8" class="fill-emerald-500/10 stroke-emerald-500/50" stroke-width="1.5"/>
+              <path d="M9 22 L16 9 L23 22" class="stroke-emerald-400" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="16" cy="9" r="2.6" class="fill-emerald-400"/>
+            </svg>
+            <span class="text-base font-bold text-white">QuantVantage <span class="text-emerald-400">Node</span></span>
+          </div>
+          <p class="mt-4 text-sm leading-relaxed text-slate-500">Private algorithmic portfolio hosting for retail investors who demand institutional discipline.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-12 sm:grid-cols-3">
+          <div>
+            <h4 class="text-xs font-semibold uppercase tracking-widest text-slate-400">Platform</h4>
+            <ul class="mt-4 space-y-2.5 text-sm">
+              <li><a href="#features" class="text-slate-500 transition hover:text-emerald-400">Features</a></li>
+              <li><a href="#system-logic" class="text-slate-500 transition hover:text-emerald-400">System Logic</a></li>
+              <li><a href="#tech-stack" class="text-slate-500 transition hover:text-emerald-400">Tech Stack</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-xs font-semibold uppercase tracking-widest text-slate-400">Account</h4>
+            <ul class="mt-4 space-y-2.5 text-sm">
+              <li><a href="#pricing" class="text-slate-500 transition hover:text-emerald-400">Pricing</a></li>
+              <li><button data-open-modal class="text-slate-500 transition hover:text-emerald-400">Launch App</button></li>
+              <li><a href="#top" class="text-slate-500 transition hover:text-emerald-400">Status</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-xs font-semibold uppercase tracking-widest text-slate-400">Legal</h4>
+            <ul class="mt-4 space-y-2.5 text-sm">
+              <li><a href="#top" class="text-slate-500 transition hover:text-emerald-400">Terms of Service</a></li>
+              <li><a href="#top" class="text-slate-500 transition hover:text-emerald-400">Privacy Policy</a></li>
+              <li><a href="#top" class="text-slate-500 transition hover:text-emerald-400">Disclosures</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="mt-12 border-t border-slate-800/70 pt-8">
+        <p class="text-xs leading-relaxed text-slate-600">
+          <span class="font-semibold text-slate-500">Risk Disclosure:</span> QuantVantage Node is a software platform and does not provide investment advice, brokerage services, or custody of client funds. Algorithmic signals, DCAX2 parameters, and Milestone Trim outputs are informational rule executions. All trading involves risk of loss. Past performance of referenced equities (NVDA, SKHY, VRT, CEG, PLTR, TSLA, and others) does not guarantee future results. Brokerage synchronization requires your own accounts with supported providers.
+        </p>
+        <p class="mt-5 text-xs text-slate-600">© <span id="year">2026</span> QuantVantage Node Systems. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============================================================
+       MODULE 10 — EARLY ACCESS MODAL
+       ============================================================ -->
+  <div id="access-modal" class="fixed inset-0 z-[90] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div id="modal-backdrop" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
+    <div class="relative w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-card">
+      <button data-close-modal class="absolute right-4 top-4 rounded-md p-1.5 text-slate-500 transition hover:bg-slate-800 hover:text-white" aria-label="Close dialog">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+
+      <div id="modal-form-state">
+        <div class="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10">
+          <svg class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        </div>
+        <h3 id="modal-title" class="text-xl font-bold text-white">Provision Your Node</h3>
+        <p class="mt-2 text-sm text-slate-400">Enter your operator email to receive your private deployment key and onboarding sequence.</p>
+        <form id="access-form" class="mt-6 space-y-4">
+          <div>
+            <label for="operator-email" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-400">Operator Email</label>
+            <input id="operator-email" type="email" required placeholder="operator@domain.com"
+              class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white placeholder-slate-600 transition focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+          </div>
+          <button type="submit" class="w-full rounded-lg bg-emerald-500 py-3 text-sm font-semibold text-slate-950 shadow-glow transition hover:bg-emerald-400">Request Deployment Key</button>
+          <p class="text-center text-[11px] text-slate-600">No custody. No card required. Keys remain on your infrastructure.</p>
+        </form>
+      </div>
+
+      <div id="modal-success-state" class="hidden py-6 text-center">
+        <div class="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-emerald-500/40 bg-emerald-500/10">
+          <svg class="h-7 w-7 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <h3 class="text-xl font-bold text-white">Deployment Key Queued</h3>
+        <p class="mt-2 text-sm text-slate-400">Your onboarding sequence has been dispatched. Check your inbox within the next few minutes.</p>
+        <button data-close-modal class="mt-7 w-full rounded-lg border border-slate-700 py-3 text-sm font-semibold text-slate-200 transition hover:border-emerald-500/60 hover:text-white">Return to Briefing</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       JAVASCRIPT MODULE — INTERACTIVE STATE CONTROLLER
+       ============================================================ -->
+  <script>
+    (function () {
+      'use strict';
+
+      const $  = (sel, ctx = document) => ctx.querySelector(sel);
+      const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
+
+      /* ---------- 1. Sticky Navigation Scroll State ---------- */
+      const header = $('#site-header');
+      const onScroll = () => {
+        if (window.scrollY > 12) {
+          header.classList.add('border-slate-800', 'bg-slate-950/85', 'backdrop-blur-md');
+        } else {
+          header.classList.remove('border-slate-800', 'bg-slate-950/85', 'backdrop-blur-md');
+        }
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      /* ---------- 2. Mobile Menu ---------- */
+      const mobileToggle = $('#mobile-toggle');
+      const mobileMenu   = $('#mobile-menu');
+      const iconOpen     = $('#icon-open');
+      const iconClose    = $('#icon-close');
+
+      const setMenu = (open) => {
+        mobileMenu.classList.toggle('hidden', !open);
+        iconOpen.classList.toggle('hidden', open);
+        iconClose.classList.toggle('hidden', !open);
+        mobileToggle.setAttribute('aria-expanded', String(open));
+      };
+      mobileToggle.addEventListener('click', () => setMenu(mobileMenu.classList.contains('hidden')));
+      $$('.mobile-link').forEach((link) => link.addEventListener('click', () => setMenu(false)));
+
+      /* ---------- 3. Scroll Reveal Observer ---------- */
+      const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+      $$('.reveal').forEach((el) => revealObserver.observe(el));
+
+      /* ---------- 4. Animated Stat Counters ---------- */
+      const animateCount = (el) => {
+        const target = parseInt(el.dataset.count, 10);
+        const duration = 1400;
+        const start = performance.now();
+        const step = (now) => {
+          const progress = Math.min((now - start) / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          el.textContent = Math.round(target * eased);
+          if (progress < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      };
+      const counterObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            animateCount(entry.target);
+            counterObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.6 });
+      $$('[data-count]').forEach((el) => counterObserver.observe(el));
+
+      /* ---------- 5. Ticker Tape Generator ---------- */
+      const universe = [
+        ['NVDA', +2.84], ['SKHY', +1.92], ['VRT', -0.73], ['CEG', +1.15], ['PLTR', +3.41], ['TSLA', -1.28],
+        ['AMD', +0.96], ['AVGO', +1.47], ['TSM', +0.62], ['MU', +2.18], ['ANET', +0.84], ['DELL', -0.31],
+        ['SMCI', +4.02], ['NVT', +0.55], ['ETN', +0.77], ['PWR', +1.03], ['GEV', +2.66], ['TLN', +1.89],
+        ['VST', +1.24], ['ORCL', +0.48], ['SNOW', -0.92], ['DDOG', +0.71], ['NET', +1.33], ['MSFT', +0.39],
+        ['GOOGL', +0.85], ['AMZN', +1.12], ['META', +0.67], ['AAPL', -0.24], ['CRWD', +1.58], ['PANW', +0.93],
+        ['SMR', +3.14], ['OKLO', +2.47], ['NRG', +0.58], ['HUBB', +0.42], ['TT', +0.88], ['PSTG', +1.76],
+        ['AI', -1.05], ['IONQ', +2.91]
+      ];
+      const track = $('#ticker-track');
+      const renderItem = ([sym, chg]) => {
+        const positive = chg >= 0;
+        const color = positive ? 'text-emerald-400' : 'text-rose-400';
+        const arrow = positive ? '▲' : '▼';
+        return `<span class="flex items-center gap-2 whitespace-nowrap">
+                  <span class="font-semibold text-slate-200">${sym}</span>
+                  <span class="${color}">${arrow} ${Math.abs(chg).toFixed(2)}%</span>
+                </span>`;
+      };
+      const sequence = universe.map(renderItem).join('<span class="text-slate-700">·</span>');
+      track.innerHTML = sequence + '<span class="text-slate-700">·</span>' + sequence + '<span class="text-slate-700">·</span>';
+
+      /* ---------- 6. Tech Stack Matrix Interaction ---------- */
+      const layerButtons = $$('[data-layer-btn]');
+      const layerPanels  = $$('[data-layer-panel]');
+
+      const activateLayer = (id) => {
+        layerButtons.forEach((btn) => {
+          const active = btn.dataset.layerBtn === id;
+          btn.setAttribute('aria-selected', String(active));
+          btn.classList.toggle('border-emerald-500/50', active);
+          btn.classList.toggle('bg-emerald-500/10', active);
+          btn.classList.toggle('border-slate-800', !active);
+          btn.classList.toggle('bg-slate-900/60', !active);
+          const index = btn.querySelector('.layer-index');
+          const title = btn.querySelector('.layer-title');
+          const sub   = btn.querySelector('.layer-sub');
+          index.classList.toggle('text-emerald-400', active);
+          index.classList.toggle('text-slate-500', !active);
+          title.classList.toggle('text-white', active);
+          title.classList.toggle('text-slate-200', !active);
+          sub.classList.toggle('text-slate-400', active);
+          sub.classList.toggle('text-slate-500', !active);
+        });
+        layerPanels.forEach((panel) => {
+          panel.classList.toggle('hidden', panel.dataset.layerPanel !== id);
+        });
+      };
+      layerButtons.forEach((btn) => {
+        btn.addEventListener('click', () => activateLayer(btn.dataset.layerBtn));
+      });
+
+      /* ---------- 7. Pricing Billing Toggle ---------- */
+      const billingToggle = $('#billing-toggle');
+      const knob          = $('#toggle-knob');
+      const labelMonthly  = $('#label-monthly');
+      const labelAnnual   = $('#label-annual');
+      const billingNotes  = $$('.billing-note');
+      let annual = false;
+
+      billingToggle.addEventListener('click', () => {
+        annual = !annual;
+        billingToggle.setAttribute('aria-checked', String(annual));
+        billingToggle.classList.toggle('bg-emerald-500', annual);
+        billingToggle.classList.toggle('bg-slate-700', !annual);
+        knob.style.transform = annual ? 'translateX(20px)' : 'translateX(0)';
+        labelMonthly.classList.toggle('text-white', !annual);
+        labelMonthly.classList.toggle('text-slate-500', annual);
+        labelAnnual.classList.toggle('text-white', annual);
+        labelAnnual.classList.toggle('text-slate-500', !annual);
+
+        $$('[data-price]').forEach((el) => {
+          el.textContent = annual ? el.dataset.annual : el.dataset.monthly;
+        });
+        billingNotes.forEach((note) => note.classList.toggle('opacity-0', !annual));
+      });
+
+      /* ---------- 8. Early Access Modal ---------- */
+      const modal        = $('#access-modal');
+      const backdrop     = $('#modal-backdrop');
+      const formState    = $('#modal-form-state');
+      const successState = $('#modal-success-state');
+      const accessForm   = $('#access-form');
+      let lastFocused = null;
+
+      const openModal = () => {
+        lastFocused = document.activeElement;
+        formState.classList.remove('hidden');
+        successState.classList.add('hidden');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        $('#operator-email').focus();
+      };
+      const closeModal = () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = '';
+        if (lastFocused) lastFocused.focus();
+      };
+
+      $$('[data-open-modal]').forEach((btn) => btn.addEventListener('click', openModal));
+      $$('[data-close-modal]').forEach((btn) => btn.addEventListener('click', closeModal));
+      backdrop.addEventListener('click', closeModal);
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+      });
+
+      accessForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        formState.classList.add('hidden');
+        successState.classList.remove('hidden');
+      });
+
+      /* ---------- 9. Scrollspy Active Anchor ---------- */
+      const navLinks = $$('[data-navlink]');
+      const spyObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            navLinks.forEach((link) => {
+              const active = link.dataset.navlink === id;
+              link.classList.toggle('text-emerald-400', active);
+              link.classList.toggle('text-slate-400', !active);
+            });
+          }
+        });
+      }, { rootMargin: '-45% 0px -50% 0px' });
+      ['features', 'system-logic', 'tech-stack', 'pricing'].forEach((id) => {
+        const section = document.getElementById(id);
+        if (section) spyObserver.observe(section);
+      });
+
+      /* ---------- 10. Footer Year ---------- */
+      $('#year').textContent = new Date().getFullYear();
+    })();
+  </script>
+</body>
+</html>
