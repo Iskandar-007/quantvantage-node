@@ -1,7 +1,7 @@
 """
 ============================================================
 S&P 500 Core Matrix - Portfolio Automation Dashboard
-Version:  2.2.0  |  Date: 22 July 2026
+Version:  2.2.1  |  Date: 23 July 2026
 Framework: Streamlit 1.35+  |  Python 3.11+
 Tracks 38 designated assets (37 equities + SIVR) against a
 rolling 52-week high, flags DCAX2 deployment triggers and
@@ -19,7 +19,7 @@ import pandas as pd
 # ============================================================
 
 # Display ticker -> Yahoo Finance lookup symbol.
-# SK Hynix trades on the Korea Exchange and requires the .KS suffix.
+# SK Hynix trades on the Korea Exchange and needs the .KS suffix.
 TICKER_MAP = {
     "KO": "KO",       "MSFT": "MSFT",   "PLTR": "PLTR",   "SIVR": "SIVR",
     "SKHY": "000660.KS", "V": "V",      "VZ": "VZ",       "AMZN": "AMZN",
@@ -55,13 +55,6 @@ st.set_page_config(
 
 @st.cache_data(ttl=3600, show_spinner="Fetching market data from Yahoo Finance...")
 def fetch_market_data():
-    """
-    Download 1-year daily price history for the full universe plus SPY.
-    Returns:
-        history:         dict of symbol -> DataFrame
-        current_prices:  Series of latest close prices
-        high_52w:        Series of 52-week highs (daily High column)
-    """
     symbols = list(TICKER_MAP.values()) + [SPY_TICKER]
     data = yf.download(
         tickers=symbols,
@@ -82,14 +75,14 @@ def fetch_market_data():
         try:
             df = data[sym].copy() if len(symbols) > 1 else data.copy()
             df.index = pd.to_datetime(df.index)
-            df = df.dropna(how="all")          # keep partially valid sessions
+            df = df.dropna(how="all")
             if df.empty or "Close" not in df.columns:
                 continue
             history[sym] = df
             current_prices[sym] = float(df["Close"].iloc[-1])
             high_52w[sym] = float(df["High"].max())
         except (KeyError, TypeError):
-            continue                            # symbol unavailable; skip cleanly
+            continue
 
     return history, pd.Series(current_prices), pd.Series(high_52w)
 
@@ -106,7 +99,6 @@ def read_secret(key):
 # ============================================================
 
 def render_position_card(pos, idx, current_prices, high_52w, history):
-    """Render a single cockpit card with DCAX2 and milestone logic."""
     display = pos["ticker"]
     sym = TICKER_MAP[display]
     cur = current_prices.get(sym)
@@ -123,13 +115,11 @@ def render_position_card(pos, idx, current_prices, high_52w, history):
         st.caption(f"52W High: ${high:,.2f} · Deviation: {drawdown:.1%}")
         st.progress(min(abs(drawdown) / 0.40, 1.0))
 
-        # --- DCAX2 trigger evaluation ---
         if drawdown <= DCAX2_THRESHOLD:
             st.error("⚠️ DCAX2 TRIGGERED: DEPLOY 3x BUY SIZE")
         else:
             st.info("Baseline DCA (1x)")
 
-        # --- Milestone trim evaluation (highest reached level wins) ---
         cost = pos["avg_cost"]
         if cost > 0:
             multiple = cur / cost
@@ -141,7 +131,6 @@ def render_position_card(pos, idx, current_prices, high_52w, history):
 
         st.caption(f"Position Value: ${pos['shares'] * cur:,.2f}")
 
-        # --- 30-day trend sparkline (native Streamlit, no extra dependency) ---
         if sym in history:
             st.line_chart(history[sym]["Close"].tail(30), height=80)
 
@@ -154,7 +143,6 @@ def render_position_card(pos, idx, current_prices, high_52w, history):
 # ============================================================
 
 def main():
-    # Session state initialization
     if "active_positions" not in st.session_state:
         st.session_state.active_positions = []
 
@@ -193,9 +181,16 @@ def main():
 
         st.markdown("---")
         st.subheader("🔐 Broker Integration")
-        st.success("IBKR token sealed in vault") if read_secret("IBKR_TOKEN") else \
+        # NOTE: these MUST be plain if/else statements (not a one-line
+        # "A if condition else B" shorthand), otherwise Streamlit prints
+        # internal debug text into the sidebar.
+        if read_secret("IBKR_TOKEN"):
+            st.success("IBKR token sealed in vault")
+        else:
             st.info("Add IBKR_TOKEN to secrets for Interactive Brokers linking")
-        st.success("Trading 212 token sealed in vault") if read_secret("T212_TOKEN") else \
+        if read_secret("T212_TOKEN"):
+            st.success("Trading 212 token sealed in vault")
+        else:
             st.info("Add T212_TOKEN to secrets for Trading 212 linking")
 
         st.markdown("---")
@@ -209,7 +204,6 @@ def main():
                  "Please retry in a few minutes.")
         return
 
-    # Data freshness + manual refresh control
     header_col, refresh_col = st.columns([5, 1])
     with header_col:
         if SPY_TICKER in history:
@@ -220,7 +214,6 @@ def main():
             fetch_market_data.clear()
             st.rerun()
 
-    # ----- TOP ROW: Portfolio summary -----
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Total ETF Holdings", f"${etf_value:,.2f}")
     col2.metric("Dry Powder Reserve", f"${cash_value:,.2f}")
@@ -261,7 +254,6 @@ def main():
         st.warning("Maximum 10 active positions reached. Remove one before adding another.")
 
     if st.session_state.active_positions:
-        # Re-flow cards into rows of five for readability
         positions = st.session_state.active_positions
         for row_start in range(0, len(positions), 5):
             row = positions[row_start:row_start + 5]
