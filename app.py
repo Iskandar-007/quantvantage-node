@@ -1707,34 +1707,10 @@ def main():
             st.rerun()
 
         st.markdown(DIVIDER, unsafe_allow_html=True)
+               import qvn_import
         st.subheader("CSV Import (first setup or full re-sync)")
-        st.caption("Use this for the first load or an occasional broker re-sync. For daily tweaks, use the table above.")
-        up = st.file_uploader("Upload broker CSV", type=["csv"], key="csv_up")
-        if up is not None:
-            parsed, err = _parse_csv(up)
-            if err:
-                st.error(err)
-            else:
-                st.markdown("**Preview**")
-                st.dataframe(pd.DataFrame(parsed), use_container_width=True, hide_index=True)
-                csv_mode = st.radio(
-                    "Import mode",
-                    ["Merge / update by ticker (keep the rest)", "Replace my whole portfolio"],
-                    horizontal=True,
-                    key="csv_mode")
-                with st.form("csv_confirm"):
-                    go = st.form_submit_button("Apply import", type="primary")
-                    if go:
-                        if csv_mode.startswith("Replace"):
-                            st.session_state["active_positions"] = parsed[:MAX_ACTIVE_STOCKS]
-                        else:
-                            by_tk = {p["ticker"]: p for p in st.session_state["active_positions"]}
-                            for r in parsed:
-                                by_tk[r["ticker"]] = r
-                            merged = list(by_tk.values())[:MAX_ACTIVE_STOCKS]
-                            st.session_state["active_positions"] = merged
-                        st.success("Imported. Review the cockpit and adjust costs if needed.")
-                        st.rerun()
+        st.caption("Supports an IBKR Activity Statement, a holdings snapshot, or (as an estimate) a transaction history. For daily tweaks, use the editable table above.")
+        qvn_import.render_csv_import()
 
         st.markdown(DIVIDER, unsafe_allow_html=True)
         st.subheader("🔒 How your data is saved (private by design)")
